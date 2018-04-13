@@ -47,7 +47,6 @@ browserHigth = 1000
 
 # 检测汽车之家链接中的跳转链接 url: 汽车之家里的根据规则获取的链接   key: 检测代码  返回: 是否找到检测代码 True False
 def check_url(url, key):
-	#if "ah_mark" not in url:  # 只遍历包含ah_mark的链接
 	if "ah_mark" not in url:  # 只遍历包含ah_mark的链接
 		return False
 	try:
@@ -104,12 +103,7 @@ def save_Spicture_from_url(cookie_area, url_name, goal_path, url, key, save_name
 	logger.info("target key : " + key + " ...")
 	logger.info("target rule : " + rule + " ...")
 	driver.get(url)  # 获取指定链接
-	#for cookie in driver.get_cookies():
-	#	print "%s -> %s" % (cookie['name'], cookie['value'])
-	#print cookie_area
 	driver.add_cookie({'name': 'adip', 'value': cookie_area})
-	#for cookie in driver.get_cookies():
-	#	print "%s -> %s" % (cookie['name'], cookie['value'])
 	with open(libPath + jqueryName, 'r') as jquery_js:  # 加载本地的jquery处理库
 		jquery = jquery_js.read()
 		driver.execute_script(jquery)
@@ -126,7 +120,6 @@ def save_Spicture_from_url(cookie_area, url_name, goal_path, url, key, save_name
 	# 根据位置信息，执行屏幕滚动，并进行截图
 	if adElem != None and adElem != []:
 		padding = browserHigth / 2
-		#print adElem
 		moveStep = 0 if adElem['top'] - padding < 0 else adElem['top'] - padding  # 确定广告位置
 		# 滚动屏幕到指定位置
 		driver.execute_script("""
@@ -154,7 +147,6 @@ def save_Spicture_from_url(cookie_area, url_name, goal_path, url, key, save_name
 			time.sleep(1)
 
 		# 截取全屏
-		# reload(sys)
 		if os.path.exists(goal_path) == False:
 			os.mkdir(goal_path)
 
@@ -234,7 +226,6 @@ def check_conf(sheet1_urls, sheet2_rule, sheet3_cook):
 	sheet1_urls_ncols = sheet1_urls.ncols  # 获取SHEET1列数
 	for i in range(1, sheet1_urls_nrows):  # 行遍历SHEET1
 		for j in range(0, sheet1_urls_ncols):  # 列遍历SHEET1
-			#print i, j
 			if j > SHEET_I:  # 如果不是处理状态列
 				state = str(sheet1_urls.row_values(i)[j])
 				if state != "" and state != SUCCESS and state != FAIL and state != NORMAL:
@@ -313,10 +304,6 @@ def get_date_rcol(sheet1_urls):
 	date_rcol = 0
 	sheet1_urls_ncols = sheet1_urls.ncols  # 获取SHEET1列数
 	for i in range(SHEET_J, sheet1_urls_ncols):  # 列遍历SHEET1
-		#print curDate, sheet1_urls.row_values(0)[i]
-		#date = datetime.datetime(*xldate_as_tuple(sheet1_urls.cell_value(0, i), 0))
-		#excelDate = date.strftime('%m/%d')
-		#print curDate,excelDate
 		if curDate == sheet1_urls.cell_value(0, i):
 			date_rcol = i
 			break
@@ -354,8 +341,6 @@ def main():
 	sheet3_cook_nrows = sheet3_cook.nrows
 	for i in range(1, sheet3_cook_nrows):
 		cookies[sheet3_cook.row_values(i)[0]] = str(sheet3_cook.row_values(i)[1])
-	#print sheet3_cook_nrows
-	#print rules, cookies
 	#sys.exit(0)
 	sheet1_urls_nrows = sheet1_urls.nrows  # 获取sheet1行数
 	date_rcol_num = get_date_rcol(sheet1_urls)
@@ -390,21 +375,12 @@ def main():
 		goal_path = imgPath + '/' + adname.encode('gb2312')  # 要保存到的目标目录
 		refreshNum = sheet1_urls.row_values(i)[SHEET_E]
 		area = sheet1_urls.row_values(i)[SHEET_F]  # 广告链接
-		#print cookies[area]
-		#json = {}
-		#json['name']='adip'
-		#json['value']=cookies[area]
-		#driver.add_cookie({'name': 'adip', 'value': '1111'})
-		#driver.add_cookie(json)
 		imgCaptureName = str(int(imgCounter))  # 图片名称 "序号id"
-		#print tmpAdname,adname
 		if tmpAdname != "begin" and tmpAdname != adname:  # 如果不为空 并检查是否为广告商最后一条
-			# if curAdnum == totalAdnum:
 			save_picture_to_ppt(saveImgNum, urlname + ": " + tmpAdname.replace("\n", ""), goal_path)  # 保存到ppt
 			saveImgNum = []
 			imgCounter = 1
 			print "======================== " + adname + " Deal End ======================== \n\n\n"
-		# continue;
 		tmpAdname = adname
 		if state == "":
 			imgCounter += 1
@@ -420,18 +396,15 @@ def main():
 			continue
 		elif state == NORMAL:
 			pass
-		#print state,SUCCESS,FAIL,NORMAL
 
 		for j in range(int(refreshNum)):
-			# try:
-			print "Refresh Total Times : %d , This is The %d Times ...\n" % (int(refreshNum), j + 1)
-			#print "hhhhhhhhhhh",cookies
-			#print "iiiiiiiiiiiii",cookies[area]
-			imgResultPicture = save_Spicture_from_url(cookies[area], urlname, goal_path, url.replace("\n", ""), key.replace("\n", ""),
+			try:
+				print "Refresh Total Times : %d , This is The %d Times ...\n" % (int(refreshNum), j + 1)
+				imgResultPicture = save_Spicture_from_url(cookies[area], urlname, goal_path, url.replace("\n", ""), key.replace("\n", ""),
 													  imgCaptureName, driver, rule)  # 处理过程
-			# except:
-			#	print "Firefox Error! Firfox is not in Running ..."
-			#	sys.exit(1)
+			except:
+				print "Firefox Error! Firfox is not in Running ..."
+				sys.exit(1)
 			if imgResultPicture != None:
 				try:
 					ws.write(i, date_rcol_num, SUCCESS)  # 设置 是否完成为True
@@ -445,12 +418,8 @@ def main():
 				ws.write(i, date_rcol_num, FAIL)  # 设置 是否完成为False
 				wb.save(confFile)
 		imgCounter += 1
-		#print i,sheet1_urls_nrows-1
 		if (i == sheet1_urls_nrows-1):
 			save_picture_to_ppt(saveImgNum, urlname + ": " + tmpAdname.replace("\n", ""), goal_path)
-		# if curAdnum == totalAdnum:
-	# save_picture_to_ppt(curAdnum, totalAdnum, url.replace("\n", ""), goal_path)  #保存到ppt
-	# print "======================== "+adname+" Deal End ======================== \n\n\n"
 
 	driver.quit()  # 关闭驱动
 
