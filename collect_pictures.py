@@ -197,13 +197,14 @@ def match_picture(imgSourceName, imgTemplateName, saveImgName):
 
 
 # 保存到ppt curAdnum：当前广告序号  totalAdnum：总广告序号   url: 网站链接 goal_path： 保存路径
-def save_picture_to_ppt(saveImgNum, url, goal_path):
+def save_picture_to_ppt(saveImgNum, url,saveUrl, goal_path):
 	if os.path.exists(goal_path) == False:  # 检查文件夹是否存在
 		os.mkdir(goal_path)
 	pptName = datetime.datetime.now().strftime("%Y%m%d") + ".pptx"
 	goal_ppt = goal_path + '/' + pptName
 	pptFile = pptx.Presentation(libPath + 'template.pptx')  # 从已有模板读入初始化
 
+	count = 0
 	for i in saveImgNum:
 		fn = goal_path + '/' + str(i) + '.png'
 		if os.path.exists(fn) == False:
@@ -211,13 +212,14 @@ def save_picture_to_ppt(saveImgNum, url, goal_path):
 			continue
 		print fn
 		slide = pptFile.slides.add_slide(pptFile.slide_layouts[5])  # 选取ppt样式
-		slide.shapes.placeholders[0].text = url  # 设置文字
+		slide.shapes.placeholders[0].text = url+": "+saveUrl[count]  # 设置文字
 		img = cv2.imread(fn)
 		sp = img.shape
 		imgWidth = 9
 		imgHigth = round(float(sp[0]) / float(sp[1]), 2) * 9
 		slide.shapes.add_picture(fn, Inches(0.5), Inches(1.5), Inches(imgWidth), Inches(imgHigth))  # 设置图片
 		pptFile.save(goal_ppt)
+		count+=1
 	print "Save Pictures to " + goal_ppt + " Success! ... \n"
 
 
@@ -360,6 +362,7 @@ def main():
 	print "============================ Begin Deal ============================= \n"
 	imgCounter = 1
 	tmpAdname = "begin"
+	saveUrl = []
 	saveImgNum = []
 	for i in range(1, sheet1_urls_nrows):  # 遍历每条待测链接
 		state = str(sheet1_urls.row_values(i)[date_rcol_num])  # 处理状态
@@ -367,28 +370,34 @@ def main():
 		key = sheet1_urls.row_values(i)[SHEET_G]  # 监测代码
 		adname = sheet1_urls.row_values(i)[SHEET_A]  # 广告商名
 		urlname = sheet1_urls.row_values(i)[SHEET_B]  # 网站名字
+		saveUrl.append(url)
 		try:
 			rule = rules[sheet1_urls.row_values(i)[SHEET_B] + sheet1_urls.row_values(i)[SHEET_I]]  # 从rules[] 读取过滤的规则
 		except:
 			print "Conf Error! ", sheet1_urls.row_values(i)[SHEET_B]," Please Check Sheet2 Have Rule or Not  ..."
 			sys.exit(1)
-		goal_path = imgPath + '/' + adname.encode('gb2312')  # 要保存到的目标目录
+
 		refreshNum = sheet1_urls.row_values(i)[SHEET_E]
 		area = sheet1_urls.row_values(i)[SHEET_F]  # 广告链接
 		imgCaptureName = str(int(imgCounter))  # 图片名称 "序号id"
 		if tmpAdname != "begin" and tmpAdname != adname:  # 如果不为空 并检查是否为广告商最后一条
-			save_picture_to_ppt(saveImgNum, urlname + ": " + tmpAdname.replace("\n", ""), goal_path)  # 保存到ppt
+			#print tmpAdname,adname
+			goal_path = imgPath + '/' + tmpAdname.encode('gb2312')  # 要保存到的目标目录
+			save_picture_to_ppt(saveImgNum, urlname,saveUrl, goal_path)  # 保存到ppt
 			saveImgNum = []
+			saveUrl = []
 			imgCounter = 1
 			print "======================== " + adname + " Deal End ======================== \n\n\n"
 		tmpAdname = adname
+		goal_path = imgPath + '/' + tmpAdname.encode('gb2312')  # 要保存到的目标目录
 		if state == "":
 			imgCounter += 1
 			if (i == sheet1_urls_nrows - 1):
-				save_picture_to_ppt(saveImgNum, urlname + ": " + tmpAdname.replace("\n", ""), goal_path)
+				save_picture_to_ppt(saveImgNum,  urlname,saveUrl, goal_path)
 			continue
 		elif state == SUCCESS:
 			saveImgNum.append(imgCounter)
+			saveUrl.append(url)
 			imgCounter += 1
 			continue
 		elif state == FAIL:
@@ -410,6 +419,7 @@ def main():
 					ws.write(i, date_rcol_num, SUCCESS)  # 设置 是否完成为True
 					wb.save(confFile)
 					saveImgNum.append(imgCounter)
+					saveUrl.append(url)
 				except:
 					print "Config Error! Please Close config.xls ..."
 					sys.exit(1)
@@ -419,7 +429,7 @@ def main():
 				wb.save(confFile)
 		imgCounter += 1
 		if (i == sheet1_urls_nrows-1):
-			save_picture_to_ppt(saveImgNum, urlname + ": " + tmpAdname.replace("\n", ""), goal_path)
+			save_picture_to_ppt(saveImgNum,  urlname,saveUrl, goal_path)
 
 	driver.quit()  # 关闭驱动
 
