@@ -208,7 +208,7 @@ def save_picture_to_ppt(saveImgNum, url,saveUrl, goal_path):
 	for i in saveImgNum:
 		fn = goal_path + '/' + str(i) + '.png'
 		if os.path.exists(fn) == False:
-			print fn + " is not exits! ... "
+			print fn + " is not exits! Please Check the picture ... "
 			continue
 		print fn
 		slide = pptFile.slides.add_slide(pptFile.slide_layouts[5])  # 选取ppt样式
@@ -220,8 +220,10 @@ def save_picture_to_ppt(saveImgNum, url,saveUrl, goal_path):
 		slide.shapes.add_picture(fn, Inches(0.5), Inches(1.5), Inches(imgWidth), Inches(imgHigth))  # 设置图片
 		pptFile.save(goal_ppt)
 		count+=1
-	print "Save Pictures to " + goal_ppt + " Success! ... \n"
-
+	if count != 0:
+		print "Save Pictures to " + goal_ppt + " Success! ... \n"
+	else:
+		print "No Pictures saved to " + goal_ppt + " Failed! ... \n"
 
 def check_conf(sheet1_urls, sheet2_rule, sheet3_cook):
 	sheet1_urls_nrows = sheet1_urls.nrows  # 获取SHEET1行数
@@ -314,6 +316,7 @@ def get_date_rcol(sheet1_urls):
 
 # 主函数
 def main():
+	print "Program begin running ... \n"
 	if check_time() == False:
 		print "Check Time! Software Use Time Has Ended ... \n"
 		exit_program()
@@ -379,7 +382,7 @@ def main():
 
 		refreshNum = sheet1_urls.row_values(i)[SHEET_E]
 		area = sheet1_urls.row_values(i)[SHEET_F]  # 广告链接
-		imgCaptureName = str(int(imgCounter))  # 图片名称 "序号id"
+		#imgCaptureName = str(int(imgCounter))  # 图片名称 "序号id"
 		if tmpAdname != "begin" and tmpAdname != adname:  # 如果不为空 并检查是否为广告商最后一条
 			#print tmpAdname,adname
 			goal_path = imgPath + '/' + tmpAdname.encode('gb2312')  # 要保存到的目标目录
@@ -387,25 +390,33 @@ def main():
 			saveImgNum = []
 			saveUrl = []
 			imgCounter = 1
-			print "======================== " + adname + " Deal End ======================== \n\n\n"
+			print "======================== " + tmpAdname + " Deal End ======================== \n\n\n"
+		#print tmpAdname,adname
 		tmpAdname = adname
 		goal_path = imgPath + '/' + tmpAdname.encode('gb2312')  # 要保存到的目标目录
 		if state == "":
 			imgCounter += 1
 			if (i == sheet1_urls_nrows - 1):
-				save_picture_to_ppt(saveImgNum,  urlname,saveUrl, goal_path)
+				save_picture_to_ppt(saveImgNum, urlname, saveUrl, goal_path)
+				print "======================== " + tmpAdname + " Deal End ======================== \n\n\n"
 			continue
 		elif state == SUCCESS:
 			saveImgNum.append(imgCounter)
 			saveUrl.append(url)
 			imgCounter += 1
+			if (i == sheet1_urls_nrows - 1):
+				save_picture_to_ppt(saveImgNum, urlname, saveUrl, goal_path)
+				print "======================== " + tmpAdname + " Deal End ======================== \n\n\n"
 			continue
 		elif state == FAIL:
 			imgCounter += 1
+			if (i == sheet1_urls_nrows - 1):
+				save_picture_to_ppt(saveImgNum, urlname, saveUrl, goal_path)
+				print "======================== " + tmpAdname + " Deal End ======================== \n\n\n"
 			continue
 		elif state == NORMAL:
 			pass
-
+		imgCaptureName = str(int(imgCounter))  # 图片名称 "序号id"
 		for j in range(int(refreshNum)):
 			try:
 				print "Refresh Total Times : %d , This is The %d Times ...\n" % (int(refreshNum), j + 1)
@@ -430,10 +441,12 @@ def main():
 		imgCounter += 1
 		if (i == sheet1_urls_nrows-1):
 			save_picture_to_ppt(saveImgNum,  urlname,saveUrl, goal_path)
+			print "======================== " + tmpAdname + " Deal End ======================== \n\n\n"
 
 	driver.quit()  # 关闭驱动
 
 def exit_program():
+	print "\n"
 	secs=10
 	while secs:
 		print "Program will exit in %d sec ..." % (secs)
