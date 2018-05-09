@@ -347,7 +347,7 @@ def main():
 	sheet1_urls_nrows = sheet1_urls.nrows  # 获取sheet1行数
 	date_rcol_num = get_date_rcol(sheet1_urls)
 	if date_rcol_num == 0:
-		print "Check Date! Please Check The Date of the Conf ... \n"
+		print "Check Date! Please Check The Sheet1 Date of the Conf ... \n"
 		sys.exit(1)
 
 	print "Check Conf Success! ...\n"
