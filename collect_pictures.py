@@ -291,7 +291,7 @@ def check_time():
 		rsp = requests.get("http://time.tianqi.com/", allow_redirects=True)  # 请求链接
 	except:
 		print "Check Time! Please Check The Network ... \n"
-		sys.exit(1)
+		exit_program()
 
 	if rsp.status_code == 200:
 		soup = BeautifulSoup(rsp.text, "lxml")
@@ -316,7 +316,7 @@ def get_date_rcol(sheet1_urls):
 def main():
 	if check_time() == False:
 		print "Check Time! Software Use Time Has Ended ... \n"
-		sys.exit(1)
+		exit_program()
 
 	init_log()
 	init_dir()
@@ -327,7 +327,7 @@ def main():
 		book = xlrd.open_workbook(confFile)
 	except:
 		print "Config Error! No config.xls Exits ... \n"
-		sys.exit(1)
+		exit_program()
 	wb = copy(book)
 	ws = wb.get_sheet(0)
 	sheet1_urls = book.sheet_by_index(0)  # 获取sheet1用例
@@ -335,7 +335,7 @@ def main():
 	sheet3_cook = book.sheet_by_index(2)  # 获取sheet3用例
 	# 检测conf是否有问题
 	if check_conf(sheet1_urls, sheet2_rule, sheet3_cook) == False:
-		sys.exit(1)
+		exit_program()
 
 	sheet2_rule_nrows = sheet2_rule.nrows  # 获取行总数
 	for i in range(1, sheet2_rule_nrows):  # 遍历excel列表存储到rules[]
@@ -348,7 +348,7 @@ def main():
 	date_rcol_num = get_date_rcol(sheet1_urls)
 	if date_rcol_num == 0:
 		print "Check Date! Please Check The Sheet1 Date of the Conf ... \n"
-		sys.exit(1)
+		exit_program()
 
 	print "Check Conf Success! ...\n"
 
@@ -356,7 +356,7 @@ def main():
 		driver = webdriver.Firefox()  # 调用Firfox API驱动
 	except:
 		print "Firfox Error! Check geckodriver.exe or Firefox update to Version 55  ..."
-		sys.exit(1)
+		exit_program()
 	driver.set_window_size(browserWidth, browserHigth)  # 设置Firfox 窗口大小
 
 	print "============================ Begin Deal ============================= \n"
@@ -375,7 +375,7 @@ def main():
 			rule = rules[sheet1_urls.row_values(i)[SHEET_B] + sheet1_urls.row_values(i)[SHEET_I]]  # 从rules[] 读取过滤的规则
 		except:
 			print "Conf Error! ", sheet1_urls.row_values(i)[SHEET_B]," Please Check Sheet2 Have Rule or Not  ..."
-			sys.exit(1)
+			exit_program()
 
 		refreshNum = sheet1_urls.row_values(i)[SHEET_E]
 		area = sheet1_urls.row_values(i)[SHEET_F]  # 广告链接
@@ -413,7 +413,7 @@ def main():
 													  imgCaptureName, driver, rule)  # 处理过程
 			except:
 				print "Firefox Error! Firfox is not in Running ..."
-				sys.exit(1)
+				exit_program()
 			if imgResultPicture != None:
 				try:
 					ws.write(i, date_rcol_num, SUCCESS)  # 设置 是否完成为True
@@ -422,7 +422,7 @@ def main():
 					saveUrl.append(url)
 				except:
 					print "Config Error! Please Close config.xls ..."
-					sys.exit(1)
+					exit_program()
 				break;
 			else:
 				ws.write(i, date_rcol_num, FAIL)  # 设置 是否完成为False
@@ -432,6 +432,16 @@ def main():
 			save_picture_to_ppt(saveImgNum,  urlname,saveUrl, goal_path)
 
 	driver.quit()  # 关闭驱动
+
+def exit_program():
+	secs=10
+	while secs:
+		print "Program will exit in %d sec ..." % (secs)
+		secs -= 1
+		time.sleep(1)
+	sys.exit(1)
+
+
 
 
 if __name__ == "__main__":
