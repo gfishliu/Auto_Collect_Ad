@@ -313,6 +313,21 @@ def get_date_rcol(sheet1_urls):
 			break
 	return date_rcol
 
+def check_sheet2_cheet3_value(sheet1_urls, rules, cookies):
+	sheet1_urls_nrows = sheet1_urls.nrows
+	for i in range(1, sheet1_urls_nrows):
+		try:
+			rule = rules[sheet1_urls.row_values(i)[SHEET_B] + sheet1_urls.row_values(i)[SHEET_I]]  # 从rules[] 读取过滤的规则
+		except:
+			print "Conf Error! ", sheet1_urls.row_values(i)[SHEET_B],"Rule ",sheet1_urls.row_values(i)[SHEET_B] + sheet1_urls.row_values(i)[SHEET_I]," Please Check Sheet2 Have Rule or Not  ..."
+			exit_program()
+
+		area = sheet1_urls.row_values(i)[SHEET_F]
+		try:
+			cookie = cookies[area]
+		except:
+			print "Conf Error! ", sheet1_urls.row_values(i)[SHEET_B]," Cookie ",area," Please Check Sheet3 Have Rule or Not  ..."
+			exit_program()
 
 # 主函数
 def main():
@@ -346,6 +361,8 @@ def main():
 	sheet3_cook_nrows = sheet3_cook.nrows
 	for i in range(1, sheet3_cook_nrows):
 		cookies[sheet3_cook.row_values(i)[0]] = str(sheet3_cook.row_values(i)[1])
+
+	check_sheet2_cheet3_value(sheet1_urls, rules, cookies)
 	#sys.exit(0)
 	sheet1_urls_nrows = sheet1_urls.nrows  # 获取sheet1行数
 	date_rcol_num = get_date_rcol(sheet1_urls)
@@ -374,11 +391,7 @@ def main():
 		adname = sheet1_urls.row_values(i)[SHEET_A]  # 广告商名
 		urlname = sheet1_urls.row_values(i)[SHEET_B]  # 网站名字
 		saveUrl.append(url)
-		try:
-			rule = rules[sheet1_urls.row_values(i)[SHEET_B] + sheet1_urls.row_values(i)[SHEET_I]]  # 从rules[] 读取过滤的规则
-		except:
-			print "Conf Error! ", sheet1_urls.row_values(i)[SHEET_B]," Please Check Sheet2 Have Rule or Not  ..."
-			exit_program()
+
 
 		refreshNum = sheet1_urls.row_values(i)[SHEET_E]
 		area = sheet1_urls.row_values(i)[SHEET_F]  # 广告链接
@@ -418,13 +431,14 @@ def main():
 			pass
 		imgCaptureName = str(int(imgCounter))  # 图片名称 "序号id"
 		for j in range(int(refreshNum)):
-			try:
-				print "Refresh Total Times : %d , This is The %d Times ...\n" % (int(refreshNum), j + 1)
-				imgResultPicture = save_Spicture_from_url(cookies[area], urlname, goal_path, url.replace("\n", ""), key.replace("\n", ""),
+			rule = rules[sheet1_urls.row_values(i)[SHEET_B] + sheet1_urls.row_values(i)[SHEET_I]]
+			#try:
+			print "Refresh Total Times : %d , This is The %d Times ...\n" % (int(refreshNum), j + 1)
+			imgResultPicture = save_Spicture_from_url(cookies[area], urlname, goal_path, url.replace("\n", ""), key.replace("\n", ""),
 													  imgCaptureName, driver, rule)  # 处理过程
-			except:
-				print "Firefox Error! Firfox is not in Running ..."
-				exit_program()
+			#except:
+			#	print "Firefox Error! Firfox is not in Running ..."
+			#	exit_program()
 			if imgResultPicture != None:
 				try:
 					ws.write(i, date_rcol_num, SUCCESS)  # 设置 是否完成为True
