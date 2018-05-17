@@ -329,6 +329,7 @@ def check_sheet2_cheet3_value(sheet1_urls, rules, cookies):
 			print "Conf Error! ", sheet1_urls.row_values(i)[SHEET_B]," Cookie ",area," Please Check Sheet3 Have Rule or Not  ..."
 			exit_program()
 
+
 # 主函数
 def main():
 	print "Program begin running ... \n"
@@ -351,6 +352,15 @@ def main():
 	sheet1_urls = book.sheet_by_index(0)  # 获取sheet1用例
 	sheet2_rule = book.sheet_by_index(1)  # 获取sheet2用例
 	sheet3_cook = book.sheet_by_index(2)  # 获取sheet3用例
+
+	try:
+		tValue = sheet1_urls.row_values(0)[0]
+		ws.write(0, 0, tValue)  # 设置 是否完成为True
+		wb.save(confFile)
+	except:
+		print "Config Error! Please close config.xls  ... \n"
+		exit_program()
+
 	# 检测conf是否有问题
 	if check_conf(sheet1_urls, sheet2_rule, sheet3_cook) == False:
 		exit_program()
@@ -432,13 +442,13 @@ def main():
 		imgCaptureName = str(int(imgCounter))  # 图片名称 "序号id"
 		for j in range(int(refreshNum)):
 			rule = rules[sheet1_urls.row_values(i)[SHEET_B] + sheet1_urls.row_values(i)[SHEET_I]]
-			#try:
-			print "Refresh Total Times : %d , This is The %d Times ...\n" % (int(refreshNum), j + 1)
-			imgResultPicture = save_Spicture_from_url(cookies[area], urlname, goal_path, url.replace("\n", ""), key.replace("\n", ""),
+			try:
+				print "Refresh Total Times : %d , This is The %d Times ...\n" % (int(refreshNum), j + 1)
+				imgResultPicture = save_Spicture_from_url(cookies[area], urlname, goal_path, url.replace("\n", ""), key.replace("\n", ""),
 													  imgCaptureName, driver, rule)  # 处理过程
-			#except:
-			#	print "Firefox Error! Firfox is not in Running ..."
-			#	exit_program()
+			except:
+				print "Firefox Error! Firfox is not in Running ..."
+				exit_program()
 			if imgResultPicture != None:
 				try:
 					ws.write(i, date_rcol_num, SUCCESS)  # 设置 是否完成为True
