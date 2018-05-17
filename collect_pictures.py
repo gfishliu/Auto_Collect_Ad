@@ -43,6 +43,7 @@ deadLine = '2018-06-01'  # 截止日期写死
 logger = logging.getLogger("log")
 browserWidth = 1500
 browserHigth = 1000
+todayDate = datetime.datetime.now().strftime("%Y%m%d")
 
 
 # 检测汽车之家链接中的跳转链接 url: 汽车之家里的根据规则获取的链接   key: 检测代码  返回: 是否找到检测代码 True False
@@ -200,7 +201,7 @@ def match_picture(imgSourceName, imgTemplateName, saveImgName):
 def save_picture_to_ppt(saveImgNum, url,saveUrl, goal_path):
 	if os.path.exists(goal_path) == False:  # 检查文件夹是否存在
 		os.mkdir(goal_path)
-	pptName = datetime.datetime.now().strftime("%Y%m%d") + ".pptx"
+	pptName = todayDate + ".pptx"
 	goal_ppt = goal_path + '/' + pptName
 	pptFile = pptx.Presentation(libPath + 'template.pptx')  # 从已有模板读入初始化
 
@@ -416,7 +417,7 @@ def main():
 			print "======================== " + tmpAdname + " Deal End ======================== \n\n\n"
 		#print tmpAdname,adname
 		tmpAdname = adname
-		goal_path = imgPath + '/' + tmpAdname.encode('gb2312')  # 要保存到的目标目录
+		goal_path = imgPath + '/' + tmpAdname.encode('gb2312') + '/' + todayDate  # 要保存到的目标目录
 		if state == "":
 			imgCounter += 1
 			if (i == sheet1_urls_nrows - 1):
