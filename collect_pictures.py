@@ -116,6 +116,7 @@ def save_Spicture_from_url(cookie_area, url_name, goal_path, url, key, save_name
 		adElem = special_deal(driver, rule, key)
 	else:  # 获取包含检测代码的链接，获取该链接偏移位置
 		logger.info("Normal_deal ...")
+		time.sleep(3)
 		adElem = normal_deal(driver, rule, key)
 
 	# 根据位置信息，执行屏幕滚动，并进行截图
