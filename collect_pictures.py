@@ -18,6 +18,8 @@ from PIL import ImageGrab
 from PIL import Image
 from bs4 import BeautifulSoup
 import urllib3.request
+import subprocess
+import urllib
 from xlrd import xldate_as_tuple
 
 # 设置全局参量以便识别
@@ -38,6 +40,7 @@ imgPath = "result/"  # 图片保存位置
 libPath = "lib/"  # 所用到的库及其他文件位置
 jqueryName = "jquery-3.0.0.min.js"  # jquery库名称
 confFile = "conf.xls"  # 配置名称
+swfsPath = "swfs/"
 rules = {}  # 配置里的规则集合
 cookies = {}
 deadLine = '2018-08-20'  # 截止日期写死
@@ -45,6 +48,7 @@ logger = logging.getLogger("log")
 browserWidth = 1500     # 浏览器窗口
 browserHigth = 1000     # 浏览器窗口
 todayDate = datetime.datetime.now().strftime("%Y%m%d")    # 格式化时间
+flasmPathCmd="flasm16win/flasm.exe -d "
 
 
 # 检测汽车之家链接中的跳转链接 url: 汽车之家里的根据规则获取的链接   key: 检测代码  返回: 是否找到检测代码 True False
@@ -80,20 +84,38 @@ def special_deal(driver, rule, key):
 				return normal_deal(driver, rule, link)  # 如果从links中找到了监测代码，那么进入normal_deal，获取link的位置
 	return []
 
+#检测swf里是否包含关键代码
+def check_swf_keycode(keycode, swf_file):
+	cmd = flasmPathCmd + swf_file
+	output = subprocess.Popen(cmd, stdout=subprocess.PIPE)
+	lines = output.stdout.readlines()
+	urlLine=""
+	for line in lines:
+		if line.find("getURL") != -1:
+			urlLine = line
+			break;
+	content=urllib.unquote(urlLine)
+	print cmd
+	print urlLine
+	print content
+	print keycode
+	return  keycode in content
+
 def special_deal_aikaqiche(driver, rule, key):
 	soup = BeautifulSoup(driver.page_source, "lxml")
 	http = urllib3.PoolManager()
 	# print soup
-	if not os.path.exists('Swfs'):
-		os.makedirs('Swfs')
+	if not os.path.exists(swfsPath):
+		os.makedirs(swfsPath)
 	num=1
+	keySwfLink=""
 	for link in soup.find_all("embed"):
 		print link
 		if "swf" in link.get('src') and "http:" in link.get('src'):
 			swf_url = link.get('src')
 
-			print("开始下载第" + str(num + 1) + " 个 swf：" + swf_url)
-			file = open('Swfs/' + str(num) + '.swf', "wb")
+			print("开始下载第" + str(num) + " 个 swf：" + swf_url)
+			file = open(swfsPath + str(num) + '.swf', "wb")
 
 			try:
 				headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:23.0) Gecko/20100101 Firefox/23.0'}
@@ -101,21 +123,30 @@ def special_deal_aikaqiche(driver, rule, key):
 				# image = urllib3.request.urlopen(req, timeout=10)
 				pic = req.data
 			except Exception as e:
-				print("第" + str(num + 1) + " 个 swf访问超时，下载失败：" + swf_url)
+				print("第" + str(num) + " 个 swf访问超时，下载失败：" + swf_url)
 				continue
 			# 遇到错误，网站反爬虫
 			# urllib.error.HTTPError: HTTP Error 403: Forbidden
 			# 原因是这里urllib.request方法还需要加入“, headers=headers”
 			# 头文件来欺骗，以为我们是客户端访问
 			file.write(pic)
-			print("第" + str(num + 1) + " 个 swf下载成功")
+			print("第" + str(num) + " 个 swf下载成功")
 			file.close()
+			if check_swf_keycode(key, swfsPath+str(num)+".swf"):
+				print "Get Get Get"
+				keySwfLink = swf_url
+				break;
 			num = num + 1
+	if keySwfLink != "":
+		return normal_deal(driver, rule, keySwfLink)  # 如果从links中找到了监测代码，那么进入normal_deal，获取link的位置
 	return []
 
 # 根据指定规则，获取元素在页面中的位置   driver: 浏览器驱动   rule: 过滤规则  key: 检测代码  返回: 广告位置坐标
 def normal_deal(driver, rule, key):
+	print key
+	print rule
 	input = "outs=$(\"[" + rule + "*=\'" + key.replace("\n", "") + "\']\").offset();return outs;"  # 根据规则，获取指定元素的位置
+	print input
 	offset = driver.execute_script(input)
 	logger.info(input)
 	input = "return $(\"[" + rule + "*=\'" + key.replace("\n", "") + "\']\").parents(\"div\").width();"  # 获取元素父级div宽度
