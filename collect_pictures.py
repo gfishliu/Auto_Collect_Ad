@@ -17,6 +17,7 @@ from xlutils.copy import copy
 from PIL import ImageGrab
 from PIL import Image
 from bs4 import BeautifulSoup
+import urllib3.request
 from xlrd import xldate_as_tuple
 
 # 设置全局参量以便识别
@@ -39,11 +40,11 @@ jqueryName = "jquery-3.0.0.min.js"  # jquery库名称
 confFile = "conf.xls"  # 配置名称
 rules = {}  # 配置里的规则集合
 cookies = {}
-deadLine = '2018-06-01'  # 截止日期写死
+deadLine = '2018-08-20'  # 截止日期写死
 logger = logging.getLogger("log")
-browserWidth = 1500
-browserHigth = 1000
-todayDate = datetime.datetime.now().strftime("%Y%m%d")
+browserWidth = 1500     # 浏览器窗口
+browserHigth = 1000     # 浏览器窗口
+todayDate = datetime.datetime.now().strftime("%Y%m%d")    # 格式化时间
 
 
 # 检测汽车之家链接中的跳转链接 url: 汽车之家里的根据规则获取的链接   key: 检测代码  返回: 是否找到检测代码 True False
@@ -79,6 +80,38 @@ def special_deal(driver, rule, key):
 				return normal_deal(driver, rule, link)  # 如果从links中找到了监测代码，那么进入normal_deal，获取link的位置
 	return []
 
+def special_deal_aikaqiche(driver, rule, key):
+	soup = BeautifulSoup(driver.page_source, "lxml")
+	http = urllib3.PoolManager()
+	# print soup
+	if not os.path.exists('Swfs'):
+		os.makedirs('Swfs')
+	num=1
+	for link in soup.find_all("embed"):
+		print link
+		if "swf" in link.get('src') and "http:" in link.get('src'):
+			swf_url = link.get('src')
+
+			print("开始下载第" + str(num + 1) + " 个 swf：" + swf_url)
+			file = open('Swfs/' + str(num) + '.swf', "wb")
+
+			try:
+				headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:23.0) Gecko/20100101 Firefox/23.0'}
+				req = http.request('GET', url=swf_url, headers=headers)
+				# image = urllib3.request.urlopen(req, timeout=10)
+				pic = req.data
+			except Exception as e:
+				print("第" + str(num + 1) + " 个 swf访问超时，下载失败：" + swf_url)
+				continue
+			# 遇到错误，网站反爬虫
+			# urllib.error.HTTPError: HTTP Error 403: Forbidden
+			# 原因是这里urllib.request方法还需要加入“, headers=headers”
+			# 头文件来欺骗，以为我们是客户端访问
+			file.write(pic)
+			print("第" + str(num + 1) + " 个 swf下载成功")
+			file.close()
+			num = num + 1
+	return []
 
 # 根据指定规则，获取元素在页面中的位置   driver: 浏览器驱动   rule: 过滤规则  key: 检测代码  返回: 广告位置坐标
 def normal_deal(driver, rule, key):
@@ -104,6 +137,7 @@ def save_Spicture_from_url(cookie_area, url_name, goal_path, url, key, save_name
 	logger.info("target key : " + key + " ...")
 	logger.info("target rule : " + rule + " ...")
 	driver.get(url)  # 获取指定链接
+	logger.info(driver.page_source)
 	driver.add_cookie({'name': 'adip', 'value': cookie_area})
 	with open(libPath + jqueryName, 'r') as jquery_js:  # 加载本地的jquery处理库
 		jquery = jquery_js.read()
@@ -112,8 +146,11 @@ def save_Spicture_from_url(cookie_area, url_name, goal_path, url, key, save_name
 
 	logger.info(url_name)
 	if u"汽车之家" in url_name:  # 对汽车之家网站做特殊处理，遍历ah_mark有关的链接，获取重定向中包含检测代码的链接，获取该链接偏移位置
-		logger.info("Special_deal ...")
+		logger.info("Qichezhijia Special_deal ...")
 		adElem = special_deal(driver, rule, key)
+	elif u"爱卡汽车" in url_name:
+		logger.info("Aikaqiche Special_deal ...")
+		adElem = special_deal_aikaqiche(driver, rule, key)
 	else:  # 获取包含检测代码的链接，获取该链接偏移位置
 		logger.info("Normal_deal ...")
 		time.sleep(3)
@@ -150,7 +187,8 @@ def save_Spicture_from_url(cookie_area, url_name, goal_path, url, key, save_name
 
 		# 截取全屏
 		if os.path.exists(goal_path) == False:
-			os.mkdir(goal_path)
+			print goal_path
+			os.makedirs(goal_path)
 
 		#######全屏截图#####
 		im = ImageGrab.grab()
@@ -201,14 +239,14 @@ def match_picture(imgSourceName, imgTemplateName, saveImgName):
 # 保存到ppt curAdnum：当前广告序号  totalAdnum：总广告序号   url: 网站链接 goal_path： 保存路径
 def save_picture_to_ppt(saveImgNum, url,saveUrl, goal_path):
 	if os.path.exists(goal_path) == False:  # 检查文件夹是否存在
-		os.mkdir(goal_path)
+		os.makedirs(goal_path)
 	pptName = todayDate + ".pptx"
 	goal_ppt = goal_path + '/' + pptName
 	pptFile = pptx.Presentation(libPath + 'template.pptx')  # 从已有模板读入初始化
 
 	count = 0
 	for i in saveImgNum:
-		fn = goal_path + '/' + str(i) + '.png'
+		fn = goal_path + '/'+todayDate+'/' + str(i) + '.png'
 		if os.path.exists(fn) == False:
 			print fn + " is not exits! Please Check the picture ... "
 			continue
@@ -227,6 +265,7 @@ def save_picture_to_ppt(saveImgNum, url,saveUrl, goal_path):
 	else:
 		print "No Pictures saved to " + goal_ppt + " Failed! ... \n"
 
+# 检查配置  sheet1_urls sheet1表格里的链接  sheet2_rule sheet2表格里的规则   sheet3_cook sheet3表格里的cookie
 def check_conf(sheet1_urls, sheet2_rule, sheet3_cook):
 	sheet1_urls_nrows = sheet1_urls.nrows  # 获取SHEET1行数
 	sheet1_urls_ncols = sheet1_urls.ncols  # 获取SHEET1列数
@@ -289,7 +328,7 @@ def init_dir():
 	if os.path.exists(imgPath) == False:
 		os.mkdir(imgPath)
 
-
+# 检查时间是否过期
 def check_time():
 	try:
 		rsp = requests.get("http://time.tianqi.com/", allow_redirects=True)  # 请求链接
@@ -304,7 +343,7 @@ def check_time():
 		return timeFormat <= deadLine
 	return False
 
-
+# 获取日期
 def get_date_rcol(sheet1_urls):
 	curDate = datetime.datetime.now().strftime("%m/%d")
 	date_rcol = 0
@@ -315,6 +354,7 @@ def get_date_rcol(sheet1_urls):
 			break
 	return date_rcol
 
+# 检查sheet2 sheet3数据是否有问题
 def check_sheet2_cheet3_value(sheet1_urls, rules, cookies):
 	sheet1_urls_nrows = sheet1_urls.nrows
 	for i in range(1, sheet1_urls_nrows):
@@ -444,13 +484,13 @@ def main():
 		imgCaptureName = str(int(imgCounter))  # 图片名称 "序号id"
 		for j in range(int(refreshNum)):
 			rule = rules[sheet1_urls.row_values(i)[SHEET_B] + sheet1_urls.row_values(i)[SHEET_I]]
-			try:
-				print "Refresh Total Times : %d , This is The %d Times ...\n" % (int(refreshNum), j + 1)
-				imgResultPicture = save_Spicture_from_url(cookies[area], urlname, goal_path, url.replace("\n", ""), key.replace("\n", ""),
+			#try:
+			print "Refresh Total Times : %d , This is The %d Times ...\n" % (int(refreshNum), j + 1)
+			imgResultPicture = save_Spicture_from_url(cookies[area], urlname, goal_path, url.replace("\n", ""), key.replace("\n", ""),
 													  imgCaptureName, driver, rule)  # 处理过程
-			except:
-				print "Firefox Error! Firfox is not in Running ..."
-				exit_program()
+			#except:
+			#	print "Firefox Error! Firfox is not in Running ..."
+			#	exit_program()
 			if imgResultPicture != None:
 				try:
 					ws.write(i, date_rcol_num, SUCCESS)  # 设置 是否完成为True
