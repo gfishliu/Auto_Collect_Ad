@@ -95,10 +95,6 @@ def check_swf_keycode(keycode, swf_file):
 			urlLine = line
 			break;
 	content=urllib.unquote(urlLine)
-	print cmd
-	print urlLine
-	print content
-	print keycode
 	return  keycode in content
 
 def special_deal_aikaqiche(driver, rule, key):
@@ -109,12 +105,12 @@ def special_deal_aikaqiche(driver, rule, key):
 		os.makedirs(swfsPath)
 	num=1
 	keySwfLink=""
+	print("download and deal swf files ... \n")
 	for link in soup.find_all("embed"):
-		print link
 		if "swf" in link.get('src') and "http:" in link.get('src'):
 			swf_url = link.get('src')
 
-			print("开始下载第" + str(num) + " 个 swf：" + swf_url)
+			#print("开始下载第" + str(num) + " 个 swf：" + swf_url)
 			file = open(swfsPath + str(num) + '.swf', "wb")
 
 			try:
@@ -130,23 +126,22 @@ def special_deal_aikaqiche(driver, rule, key):
 			# 原因是这里urllib.request方法还需要加入“, headers=headers”
 			# 头文件来欺骗，以为我们是客户端访问
 			file.write(pic)
-			print("第" + str(num) + " 个 swf下载成功")
+			#print("第" + str(num) + " 个 swf下载成功")
 			file.close()
 			if check_swf_keycode(key, swfsPath+str(num)+".swf"):
-				print "Get Get Get"
+				#print "Get Get Get"
 				keySwfLink = swf_url
 				break;
 			num = num + 1
+	print("swf files deal over ... \n")
+	print("swf files deal over ... \n")
 	if keySwfLink != "":
 		return normal_deal(driver, rule, keySwfLink)  # 如果从links中找到了监测代码，那么进入normal_deal，获取link的位置
 	return []
 
 # 根据指定规则，获取元素在页面中的位置   driver: 浏览器驱动   rule: 过滤规则  key: 检测代码  返回: 广告位置坐标
 def normal_deal(driver, rule, key):
-	print key
-	print rule
 	input = "outs=$(\"[" + rule + "*=\'" + key.replace("\n", "") + "\']\").offset();return outs;"  # 根据规则，获取指定元素的位置
-	print input
 	offset = driver.execute_script(input)
 	logger.info(input)
 	input = "return $(\"[" + rule + "*=\'" + key.replace("\n", "") + "\']\").parents(\"div\").width();"  # 获取元素父级div宽度
