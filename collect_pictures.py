@@ -98,45 +98,51 @@ def check_swf_keycode(keycode, swf_file):
 	return  keycode in content
 
 def special_deal_aikaqiche(driver, rule, key):
-	soup = BeautifulSoup(driver.page_source, "lxml")
-	http = urllib3.PoolManager()
-	# print soup
-	if not os.path.exists(swfsPath):
-		os.makedirs(swfsPath)
-	num=1
-	keySwfLink=""
-	print("download and deal swf files ... \n")
-	for link in soup.find_all("embed"):
-		if "swf" in link.get('src') and "http:" in link.get('src'):
-			swf_url = link.get('src')
+	#处理图片链接
+	if rule == "href":
+		#key = urllib.quote(key)
+		return normal_deal(driver, rule, key)
+	#处理flash
+	elif rule == "src":
+		soup = BeautifulSoup(driver.page_source, "lxml")
+		http = urllib3.PoolManager()
+		# print soup
+		if not os.path.exists(swfsPath):
+			os.makedirs(swfsPath)
+		num=1
+		keySwfLink=""
+		print("download and deal swf files ... \n")
+		for link in soup.find_all("embed"):
+			if "swf" in link.get('src') and "http:" in link.get('src'):
+				swf_url = link.get('src')
 
-			#print("开始下载第" + str(num) + " 个 swf：" + swf_url)
-			file = open(swfsPath + str(num) + '.swf', "wb")
+				#print("开始下载第" + str(num) + " 个 swf：" + swf_url)
+				file = open(swfsPath + str(num) + '.swf', "wb")
 
-			try:
-				headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:23.0) Gecko/20100101 Firefox/23.0'}
-				req = http.request('GET', url=swf_url, headers=headers)
-				# image = urllib3.request.urlopen(req, timeout=10)
-				pic = req.data
-			except Exception as e:
-				print("第" + str(num) + " 个 swf访问超时，下载失败：" + swf_url)
-				continue
-			# 遇到错误，网站反爬虫
-			# urllib.error.HTTPError: HTTP Error 403: Forbidden
-			# 原因是这里urllib.request方法还需要加入“, headers=headers”
-			# 头文件来欺骗，以为我们是客户端访问
-			file.write(pic)
-			#print("第" + str(num) + " 个 swf下载成功")
-			file.close()
-			if check_swf_keycode(key, swfsPath+str(num)+".swf"):
-				#print "Get Get Get"
-				keySwfLink = swf_url
-				break;
-			num = num + 1
-	print("swf files deal over ... \n")
-	print("swf files deal over ... \n")
-	if keySwfLink != "":
-		return normal_deal(driver, rule, keySwfLink)  # 如果从links中找到了监测代码，那么进入normal_deal，获取link的位置
+				try:
+					headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:23.0) Gecko/20100101 Firefox/23.0'}
+					req = http.request('GET', url=swf_url, headers=headers)
+					# image = urllib3.request.urlopen(req, timeout=10)
+					pic = req.data
+				except Exception as e:
+					print("第" + str(num) + " 个 swf访问超时，下载失败：" + swf_url)
+					continue
+				# 遇到错误，网站反爬虫
+				# urllib.error.HTTPError: HTTP Error 403: Forbidden
+				# 原因是这里urllib.request方法还需要加入“, headers=headers”
+				# 头文件来欺骗，以为我们是客户端访问
+				file.write(pic)
+				#print("第" + str(num) + " 个 swf下载成功")
+				file.close()
+				if check_swf_keycode(key, swfsPath+str(num)+".swf"):
+					#print "Get Get Get"
+					keySwfLink = swf_url
+					break;
+				num = num + 1
+		print("swf files deal over ... \n")
+		print("swf files deal over ... \n")
+		if keySwfLink != "":
+			return normal_deal(driver, rule, keySwfLink)  # 如果从links中找到了监测代码，那么进入normal_deal，获取link的位置
 	return []
 
 # 根据指定规则，获取元素在页面中的位置   driver: 浏览器驱动   rule: 过滤规则  key: 检测代码  返回: 广告位置坐标
@@ -450,11 +456,13 @@ def main():
 
 	print "Check Conf Success! ...\n"
 
-	try:
-		driver = webdriver.Firefox()  # 调用Firfox API驱动
-	except:
-		print "Firfox Error! Check geckodriver.exe or Firefox update to Version 55  ..."
-		exit_program()
+	option = webdriver.FirefoxProfile()
+	option.set_preference("plugin.state.flash", 2)
+	#try:
+	driver = webdriver.Firefox(option)  # 调用Firfox API驱动
+	#except:
+	#	print "Firfox Error! Check geckodriver.exe or Firefox update to Version 55  ..."
+	#	exit_program()
 	driver.set_window_size(browserWidth, browserHigth)  # 设置Firfox 窗口大小
 
 	print "============================ Begin Deal ============================= \n"
