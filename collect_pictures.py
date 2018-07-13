@@ -484,20 +484,24 @@ def main():
 		#imgCaptureName = str(int(imgCounter))  # 图片名称 "序号id"
 		if tmpAdname != "begin" and tmpAdname != adname:  # 如果不为空 并检查是否为广告商最后一条
 			#print tmpAdname,adname
-			goal_path = imgPath + '/' + tmpAdname.encode('gb2312')  # 要保存到的目标目录
-			save_picture_to_ppt(saveImgNum, urlname,saveUrl, goal_path)  # 保存到ppt
+			if len(saveImgNum) != 0:
+				goal_path = imgPath + '/' + tmpAdname.encode('gb2312')  # 要保存到的目标目录
+				save_picture_to_ppt(saveImgNum, urlname,saveUrl, goal_path)  # 保存到ppt
+				print "======================== " + tmpAdname + " Deal End ======================== \n\n\n"
+
 			saveImgNum = []
 			saveUrl = []
 			imgCounter = 1
-			print "======================== " + tmpAdname + " Deal End ======================== \n\n\n"
+
 		#print tmpAdname,adname
 		tmpAdname = adname
 		goal_path = imgPath + '/' + tmpAdname.encode('gb2312') + '/' + todayDate  # 要保存到的目标目录
 		if state == "":
 			imgCounter += 1
 			if (i == sheet1_urls_nrows - 1):
-				save_picture_to_ppt(saveImgNum, urlname, saveUrl, goal_path)
-				print "======================== " + tmpAdname + " Deal End ======================== \n\n\n"
+				if len(saveImgNum) != 0:
+					save_picture_to_ppt(saveImgNum, urlname, saveUrl, goal_path)
+					print "======================== " + tmpAdname + " Deal End ======================== \n\n\n"
 			continue
 		elif state == SUCCESS:
 			saveImgNum.append(imgCounter)
@@ -510,8 +514,9 @@ def main():
 		elif state == FAIL:
 			imgCounter += 1
 			if (i == sheet1_urls_nrows - 1):
-				save_picture_to_ppt(saveImgNum, urlname, saveUrl, goal_path)
-				print "======================== " + tmpAdname + " Deal End ======================== \n\n\n"
+				if len(saveImgNum) != 0:
+					save_picture_to_ppt(saveImgNum, urlname, saveUrl, goal_path)
+					print "======================== " + tmpAdname + " Deal End ======================== \n\n\n"
 			continue
 		elif state == NORMAL:
 			pass
@@ -540,8 +545,9 @@ def main():
 				wb.save(confFile)
 		imgCounter += 1
 		if (i == sheet1_urls_nrows-1):
-			save_picture_to_ppt(saveImgNum,  urlname,saveUrl, goal_path)
-			print "======================== " + tmpAdname + " Deal End ======================== \n\n\n"
+			if len(saveImgNum) !=0:
+				save_picture_to_ppt(saveImgNum,  urlname,saveUrl, goal_path)
+				print "======================== " + tmpAdname + " Deal End ======================== \n\n\n"
 
 	driver.quit()  # 关闭驱动
 
